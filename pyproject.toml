@@ -89,7 +89,7 @@ python_functions = ["test_*"]
 addopts = "-v --cov=sql_generator --cov-report=html --cov-report=term"
 
 [tool.coverage.run]
-source = ["src/sql_generator"]
+source = ["sql_generator"]
 omit = ["*/tests/*", "*/test_*"]
 
 [tool.flake8]

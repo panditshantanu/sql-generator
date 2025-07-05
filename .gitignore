@@ -20,8 +20,11 @@ lib/
 lib64/
 parts/
 sdist/
-var/
-wheels/
+var/# Keep important files
+!data/schemas/tables_schema.json
+!data/config/config.json
+!requirements.txt
+!pyproject.toml
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -251,3 +254,7 @@ node_modules/
 !data/config/config.json
 !requirements.txt
 !pyproject.toml
+
+# Legacy/backup directories
+Source/
+src/sql_generator/

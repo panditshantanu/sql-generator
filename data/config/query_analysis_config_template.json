@@ -1,0 +1,40 @@
+{
+  "schema_info": {
+    "domain": "generic",
+    "description": "Generic template for any domain - customize table and query patterns",
+    "version": "1.0"
+  },
+  "table_patterns": [
+    {
+      "table_name": "REPLACE_WITH_YOUR_TABLE_NAME",
+      "keywords": ["keyword1", "keyword2", "keyword3"],
+      "aliases": ["alias1", "alias2"],
+      "relationships": ["other_table.foreign_key"],
+      "exclusion_patterns": ["excluding_keyword1", "excluding_keyword2"]
+    }
+  ],
+  "query_patterns": [
+    {
+      "pattern_id": "generic_pattern",
+      "keywords": ["pattern_keyword1", "pattern_keyword2"],
+      "required_tables": ["required_table1"],
+      "optional_tables": ["optional_table1"],
+      "excluded_tables": ["excluded_table1"],
+      "confidence_boost": 0.1
+    }
+  ],
+  "domain_config": {
+    "min_confidence_threshold": 0.5,
+    "max_tables_per_query": 4,
+    "max_columns_per_table": 3,
+    "enable_relationship_inference": true,
+    "strict_mode": false,
+    "table_selection_strategy": "confidence_based",
+    "enable_context_filtering": true,
+    "relationship_weights": {
+      "direct": 1.0,
+      "foreign_key": 0.8,
+      "indirect": 0.4
+    }
+  }
+}

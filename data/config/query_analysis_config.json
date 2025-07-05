@@ -1,0 +1,116 @@
+{
+  "table_patterns": [
+    {
+      "table_name": "cust",
+      "keywords": ["customer", "client", "person", "individual", "buyer"],
+      "aliases": ["customers", "customer", "c"],
+      "relationships": ["ord_hdr.ct_id"],
+      "exclusion_patterns": ["employee", "staff", "worker"]
+    },
+    {
+      "table_name": "prd_mstr",
+      "keywords": ["product", "item", "goods", "merchandise", "inventory"],
+      "aliases": ["products", "product", "prod", "p"],
+      "relationships": ["ord_ln.prd_id"],
+      "exclusion_patterns": []
+    },
+    {
+      "table_name": "ord_hdr",
+      "keywords": ["order", "purchase", "transaction", "sale"],
+      "aliases": ["orders", "order_header", "oh"],
+      "relationships": ["cust.ct_id", "ord_ln.ord_id"],
+      "exclusion_patterns": []
+    },
+    {
+      "table_name": "ord_ln",
+      "keywords": ["order", "line", "item", "detail", "purchase"],
+      "aliases": ["order_lines", "order_items", "line_items", "ol"],
+      "relationships": ["ord_hdr.ord_id", "prd_mstr.prd_id"],
+      "exclusion_patterns": []
+    },
+    {
+      "table_name": "emp_mstr",
+      "keywords": ["employee", "staff", "worker", "personnel"],
+      "aliases": ["employees", "employee", "emp", "e"],
+      "relationships": [],
+      "exclusion_patterns": ["customer", "client", "buyer"]
+    },
+    {
+      "table_name": "mkt_cmp",
+      "keywords": ["marketing", "campaign", "promotion", "advertisement"],
+      "aliases": ["marketing_campaigns", "campaigns", "marketing", "mc"],
+      "relationships": [],
+      "exclusion_patterns": ["product", "customer", "order"]
+    },
+    {
+      "table_name": "wh_mstr",
+      "keywords": ["warehouse", "storage", "facility", "location", "distribution"],
+      "aliases": ["warehouses", "warehouse", "wh"],
+      "relationships": [],
+      "exclusion_patterns": ["customer", "product", "order"]
+    }
+  ],
+  "query_patterns": [
+    {
+      "pattern_id": "customer_purchase",
+      "keywords": ["customer", "purchased", "bought", "ordered"],
+      "required_tables": ["cust", "ord_hdr", "ord_ln"],
+      "optional_tables": ["prd_mstr"],
+      "excluded_tables": ["emp_mstr", "mkt_cmp", "wh_mstr"],
+      "confidence_boost": 0.2
+    },
+    {
+      "pattern_id": "customer_by_name",
+      "keywords": ["mike", "john", "jane", "mary", "customer"],
+      "required_tables": ["cust", "ord_hdr", "ord_ln"],
+      "optional_tables": ["prd_mstr"],
+      "excluded_tables": ["emp_mstr", "mkt_cmp", "wh_mstr"],
+      "confidence_boost": 0.3
+    },
+    {
+      "pattern_id": "product_analysis",
+      "keywords": ["product", "item", "inventory", "stock"],
+      "required_tables": ["prd_mstr"],
+      "optional_tables": ["ord_ln"],
+      "excluded_tables": ["emp_mstr", "mkt_cmp"],
+      "confidence_boost": 0.1
+    },
+    {
+      "pattern_id": "employee_query",
+      "keywords": ["employee", "staff", "worker", "personnel"],
+      "required_tables": ["emp_mstr"],
+      "optional_tables": [],
+      "excluded_tables": ["cust", "ord_hdr", "ord_ln"],
+      "confidence_boost": 0.3
+    },
+    {
+      "pattern_id": "marketing_analysis",
+      "keywords": ["marketing", "campaign", "promotion"],
+      "required_tables": ["mkt_cmp"],
+      "optional_tables": [],
+      "excluded_tables": ["ord_hdr", "ord_ln"],
+      "confidence_boost": 0.2
+    },
+    {
+      "pattern_id": "warehouse_operations",
+      "keywords": ["warehouse", "storage", "facility", "distribution"],
+      "required_tables": ["wh_mstr"],
+      "optional_tables": [],
+      "excluded_tables": ["cust", "ord_hdr"],
+      "confidence_boost": 0.2
+    }
+  ],
+  "domain_config": {
+    "min_confidence_threshold": 0.5,
+    "max_tables_per_query": 4,
+    "enable_relationship_inference": true,
+    "enable_relationship_completion": true,
+    "strict_mode": false,
+    "table_selection_strategy": "confidence_based",
+    "relationship_weights": {
+      "direct": 1.0,
+      "foreign_key": 0.8,
+      "indirect": 0.4
+    }
+  }
+}

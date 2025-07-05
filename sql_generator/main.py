@@ -10,18 +10,6 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-"""
-Main module for the SQL Generator project.
-Handles schema processing, embedding generation, and vector storage.
-"""
-
-import os
-import sys
-import shutil
-import logging
-from pathlib import Path
-from typing import Optional
-
 # Add paths for robust imports
 current_dir = Path(__file__).parent
 project_root = current_dir.parent
@@ -162,7 +150,7 @@ def search_schema_demo(collection_prefix: str = "schema"):
     
     try:
         # Initialize searcher
-        searcher = SchemaSearcher(collection_prefix=collection_prefix)
+        searcher = SchemaSearcher(verbose=True)
         
         # Get search statistics
         print("\n📊 Search Statistics:")
@@ -375,7 +363,7 @@ def custom_search_demo(query: str, collection_prefix: str = "schema"):
     
     try:
         # Initialize searcher
-        searcher = SchemaSearcher(collection_prefix=collection_prefix)
+        searcher = SchemaSearcher(verbose=True)
         
         # Combined search with more results for better filtering
         print("🎯 Intelligent Schema Search Results:")
@@ -385,7 +373,7 @@ def custom_search_demo(query: str, collection_prefix: str = "schema"):
         print(f"\n📋 COLUMN MATCHES:")
         column_ranked = filter_and_rank_results(
             combined_results["columns"], 
-            min_confidence=25.0  # Filter out irrelevant matches while preserving analysis detail
+            min_confidence=30.0  # Slightly lower for analysis to show more detail
         )
         display_ranked_results(column_ranked, "columns")
         
@@ -393,7 +381,7 @@ def custom_search_demo(query: str, collection_prefix: str = "schema"):
         print(f"\n📁 TABLE MATCHES:")
         table_ranked = filter_and_rank_results(
             combined_results["tables"],
-            min_confidence=25.0  # Filter out irrelevant matches while preserving analysis detail
+            min_confidence=30.0  # Slightly lower for analysis to show more detail
         )
         display_ranked_results(table_ranked, "tables")
         
@@ -460,7 +448,7 @@ def _generate_search_summary(column_ranked: dict, table_ranked: dict, query: str
 
 def generate_sql_prompt_demo(query: str, collection_prefix: str = "schema"):
     """
-    Generate SQL prompt using semantic search + prompt generator.
+    Generate SQL prompt using enterprise-grade configurable components.
     
     Args:
         query: The user's natural language query
@@ -470,96 +458,67 @@ def generate_sql_prompt_demo(query: str, collection_prefix: str = "schema"):
     print("=" * 80)
     
     try:
-        # Step 1: Semantic search to find relevant tables/columns
-        print("🔍 Step 1: Semantic Search for Relevant Schema Elements")
-        searcher = SchemaSearcher(collection_prefix=collection_prefix)
-        combined_results = searcher.search_schema(query, k_columns=8, k_tables=5)
+        # Use the enterprise-grade function
+        analysis_data, prompt_string = generate_sql_prompt_data(query, collection_prefix)
         
-        # Filter and rank results
-        column_ranked = filter_and_rank_results(
-            combined_results["columns"], 
-            min_confidence=30.0  # Higher threshold to filter out irrelevant tables like mkt_cmp
-        )
-        table_ranked = filter_and_rank_results(
-            combined_results["tables"],
-            min_confidence=30.0  # Higher threshold to filter out irrelevant tables like mkt_cmp
-        )
+        if not analysis_data["success"]:
+            print(f"❌ Error: {analysis_data['error']}")
+            return
         
-        # Get best tables for SQL generation
-        best_tables = set()
-        for result in (column_ranked["high"] + column_ranked["medium"])[:5]:
-            table_name = result.get('table', '')
-            if table_name:
-                best_tables.add(table_name)
+        print("🔍 Step 1: Enterprise Query Analysis")
+        print(f"   � Table Selection: {analysis_data.get('table_selection_reasoning', 'N/A')}")
+        print(f"   📋 Column Selection: {analysis_data.get('column_selection_reasoning', 'N/A')}")
         
-        for result in (table_ranked["high"] + table_ranked["medium"])[:3]:
-            table_name = result.get('table', '')
-            if table_name:
-                best_tables.add(table_name)
+        if analysis_data.get("excluded_tables"):
+            print(f"   🚫 Excluded Tables: {', '.join(analysis_data['excluded_tables'])}")
         
-        relevant_tables = list(best_tables)
-        
-        print(f"   ✅ Found {len(relevant_tables)} relevant tables: {', '.join(relevant_tables)}")
+        relevant_tables = analysis_data["relevant_tables"]
+        print(f"   ✅ Selected Tables ({len(relevant_tables)}): {', '.join(relevant_tables)}")
         
         if not relevant_tables:
             print("   ❌ No relevant tables found. Cannot generate SQL prompt.")
             return
         
-        # Step 2: Generate SQL prompt
-        print(f"\n🤖 Step 2: Generate AI-Ready SQL Prompt")
+        # Step 2: Display SQL prompt
+        print(f"\n🤖 Step 2: Generated SQL Prompt")
+        print("   ✅ SQL Prompt Generated Successfully!")
         
-        # Import the SQL prompt generator
-        try:
-            from llm.sql_prompt_generator import SQLPromptGenerator
-            generator = SQLPromptGenerator()
-            
-            # Generate the prompt
-            sql_prompt = generator.auto_generate_prompt(
-                query, 
-                relevant_tables,
-                context="Semantic search identified relevant tables"
-            )
-            
-            print("   ✅ SQL Prompt Generated Successfully!")
-            
-            # Step 3: Display the complete prompt
-            print(f"\n📋 COMPLETE SQL GENERATION PROMPT:")
-            print("=" * 60)
-            print(sql_prompt)
-            print("=" * 60)
-            
-            # Step 4: Show suggested usage
-            print(f"\n💡 HOW TO USE THIS PROMPT:")
-            print("   1. Copy the above prompt")
-            print("   2. Send it to your LLM (ChatGPT, Claude, etc.)")
-            print("   3. The LLM will generate the SQL query")
-            print("   4. Review and test the generated SQL")
-            
-            # Step 5: Show the semantic search context
-            print(f"\n🔍 SEMANTIC SEARCH CONTEXT:")
-            if column_ranked["high"]:
-                print("   🎯 High-Confidence Columns:")
-                for result in column_ranked["high"][:3]:
-                    table = result.get('table', 'unknown')
-                    column = result.get('column', 'unknown')
-                    confidence = result.get('confidence', 0)
-                    print(f"      • {table}.{column} ({confidence:.1f}%)")
-            
-            if table_ranked["high"]:
-                print("   🏆 High-Confidence Tables:")
-                for result in table_ranked["high"][:3]:
-                    table = result.get('table', 'unknown')
-                    confidence = result.get('confidence', 0)
-                    print(f"      • {table} ({confidence:.1f}%)")
-            
-        except ImportError as e:
-            print(f"   ❌ Cannot import SQL prompt generator: {e}")
-            print("   💡 Showing semantic search results only")
-            
-            # Fallback: show semantic search results
-            print(f"\n📋 RELEVANT TABLES FOUND:")
-            for table in relevant_tables:
-                print(f"   • {table}")
+        # Step 3: Display the complete prompt
+        print(f"\n📋 COMPLETE SQL GENERATION PROMPT:")
+        print("=" * 60)
+        print(prompt_string)
+        print("=" * 60)
+        
+        # Step 4: Show suggested usage
+        print(f"\n💡 HOW TO USE THIS PROMPT:")
+        print("   1. Copy the above prompt")
+        print("   2. Send it to your LLM (ChatGPT, Claude, etc.)")
+        print("   3. The LLM will generate the SQL query")
+        print("   4. Review and test the generated SQL")
+        
+        # Step 5: Show the analysis context
+        print(f"\n🔍 ANALYSIS CONTEXT:")
+        summary = analysis_data["summary"]
+        print(f"   📊 Tables Found: {summary['total_tables_found']}")
+        print(f"   📋 High-Confidence Columns: {summary['high_confidence_columns']}")
+        print(f"   📁 High-Confidence Tables: {summary['high_confidence_tables']}")
+        
+        high_cols = analysis_data["column_results"]["high_confidence"]
+        if high_cols:
+            print("   🎯 Top Columns:")
+            for col in high_cols[:3]:
+                table = col.get('table', 'unknown')
+                column = col.get('column', 'unknown')
+                confidence = col.get('confidence', 0)
+                print(f"      • {table}.{column} ({confidence:.1f}%)")
+        
+        high_tbls = analysis_data["table_results"]["high_confidence"] 
+        if high_tbls:
+            print("   🏆 Top Tables:")
+            for tbl in high_tbls[:3]:
+                table = tbl.get('table', 'unknown')
+                confidence = tbl.get('confidence', 0)
+                print(f"      • {table} ({confidence:.1f}%)")
         
     except Exception as e:
         print(f"❌ SQL prompt generation failed: {e}")
@@ -570,6 +529,7 @@ def generate_sql_prompt_demo(query: str, collection_prefix: str = "schema"):
 def generate_sql_prompt_data(query: str, collection_prefix: str = "schema") -> tuple:
     """
     Generate SQL prompt and return structured data + prompt string.
+    Simple approach focused on basic table selection to reduce prompt context.
     
     Args:
         query: The user's natural language query
@@ -581,52 +541,65 @@ def generate_sql_prompt_data(query: str, collection_prefix: str = "schema") -> t
         - prompt_string: The complete SQL generation prompt ready for LLM
     """
     try:
-        # Step 1: Semantic search to find relevant tables/columns
-        searcher = SchemaSearcher(collection_prefix=collection_prefix)
-        combined_results = searcher.search_schema(query, k_columns=8, k_tables=5)
+        # Step 1: Get semantic search results
+        searcher = SchemaSearcher(verbose=True)
+        combined_results = searcher.search_schema(query, k_columns=10, k_tables=5)
         
-        # Filter and rank results
-        column_ranked = filter_and_rank_results(
-            combined_results["columns"], 
-            min_confidence=30.0  # Higher threshold for SQL generation to filter out irrelevant results
-        )
-        table_ranked = filter_and_rank_results(
-            combined_results["tables"],
-            min_confidence=30.0  # Higher threshold for SQL generation to filter out irrelevant results
-        )
+        # Step 2: Simple table selection 
+        try:
+            from simple_table_selector import SimpleTableSelector
+            selector = SimpleTableSelector()
+            selected_tables = selector.select_tables(query, combined_results, max_tables=4)
+        except ImportError:
+            # Fallback to basic selection if simple selector not available
+            selected_tables = _basic_table_selection(combined_results)
         
-        # Get best tables for SQL generation
-        best_tables = set()
-        for result in (column_ranked["high"] + column_ranked["medium"])[:5]:
-            table_name = result.get('table', '')
-            if table_name:
-                best_tables.add(table_name)
+        # Step 3: Filter columns to selected tables only
+        selected_columns = [
+            col for col in combined_results.get('columns', [])
+            if col.get('table') in selected_tables
+        ][:8]  # Limit columns
         
-        for result in (table_ranked["high"] + table_ranked["medium"])[:3]:
-            table_name = result.get('table', '')
-            if table_name:
-                best_tables.add(table_name)
+        # Step 4: Create simple confidence scores
+        table_scores = {}
+        for table in selected_tables:
+            # Find best score for this table from semantic results
+            best_score = 0.0
+            for col in combined_results.get('columns', []):
+                if col.get('table') == table:
+                    best_score = max(best_score, col.get('score', 0))
+            for tbl in combined_results.get('tables', []):
+                if tbl.get('table') == table:
+                    best_score = max(best_score, tbl.get('score', 0))
+            table_scores[table] = best_score
         
-        relevant_tables = list(best_tables)
+        # Convert to legacy format for backward compatibility
+        column_ranked = {
+            "high": [col for col in selected_columns if col.get('score', 0) >= 0.3],
+            "medium": [col for col in selected_columns if 0.15 <= col.get('score', 0) < 0.3],
+            "low": [col for col in selected_columns if col.get('score', 0) < 0.15],
+            "all_filtered": selected_columns
+        }
+        
+        table_ranked = {
+            "high": [{"table": table, "confidence": score * 100, "score": score} 
+                    for table, score in table_scores.items() if score >= 0.3],
+            "medium": [{"table": table, "confidence": score * 100, "score": score} 
+                      for table, score in table_scores.items() if 0.15 <= score < 0.3],
+            "low": [{"table": table, "confidence": score * 100, "score": score} 
+                   for table, score in table_scores.items() if score < 0.15],
+            "all_filtered": [{"table": table, "confidence": score * 100, "score": score} 
+                           for table, score in table_scores.items()]
+        }
         
         # Build analysis data structure
         analysis_data = {
             "query": query,
-            "relevant_tables": relevant_tables,
-            "column_results": {
-                "high_confidence": column_ranked["high"],
-                "medium_confidence": column_ranked["medium"],
-                "low_confidence": column_ranked["low"],
-                "all_filtered": column_ranked["all_filtered"]
-            },
-            "table_results": {
-                "high_confidence": table_ranked["high"],
-                "medium_confidence": table_ranked["medium"], 
-                "low_confidence": table_ranked["low"],
-                "all_filtered": table_ranked["all_filtered"]
-            },
+            "relevant_tables": selected_tables,
+            "column_results": column_ranked,
+            "table_results": table_ranked,
             "summary": {
-                "total_tables_found": len(relevant_tables),
+                "total_tables_found": len(selected_tables),
                 "high_confidence_columns": len(column_ranked["high"]),
                 "high_confidence_tables": len(table_ranked["high"]),
                 "total_column_matches": len(column_ranked["all_filtered"]),
@@ -637,12 +610,15 @@ def generate_sql_prompt_data(query: str, collection_prefix: str = "schema") -> t
                 "top_table": table_ranked["high"][0] if table_ranked["high"] else None
             },
             "success": True,
-            "error": None
+            "error": None,
+            "table_selection_reasoning": f"Simple semantic search selected {len(selected_tables)} relevant tables",
+            "column_selection_reasoning": f"Filtered to columns from selected tables",
+            "excluded_tables": []
         }
         
         # Generate SQL prompt if tables found
         prompt_string = ""
-        if relevant_tables:
+        if selected_tables:
             try:
                 from llm.sql_prompt_generator import SQLPromptGenerator
                 generator = SQLPromptGenerator()
@@ -650,8 +626,8 @@ def generate_sql_prompt_data(query: str, collection_prefix: str = "schema") -> t
                 # Generate the prompt
                 prompt_string = generator.auto_generate_prompt(
                     query, 
-                    relevant_tables,
-                    context="Semantic search identified relevant tables"
+                    selected_tables,
+                    context="Simple semantic search identified relevant tables"
                 )
                 
                 analysis_data["prompt_generated"] = True
@@ -672,16 +648,46 @@ def generate_sql_prompt_data(query: str, collection_prefix: str = "schema") -> t
         error_data = {
             "query": query,
             "relevant_tables": [],
-            "column_results": {"high_confidence": [], "medium_confidence": [], "low_confidence": [], "all_filtered": []},
-            "table_results": {"high_confidence": [], "medium_confidence": [], "low_confidence": [], "all_filtered": []},
+            "column_results": {"high": [], "medium": [], "low": [], "all_filtered": []},
+            "table_results": {"high": [], "medium": [], "low": [], "all_filtered": []},
             "summary": {"total_tables_found": 0, "high_confidence_columns": 0, "high_confidence_tables": 0, 
                        "total_column_matches": 0, "total_table_matches": 0},
             "best_matches": {"top_column": None, "top_table": None},
             "success": False,
             "error": str(e),
-            "prompt_generated": False
+            "prompt_generated": False,
+            "table_selection_reasoning": f"Error: {e}",
+            "column_selection_reasoning": f"Error: {e}",
+            "excluded_tables": []
         }
         return (error_data, f"Error generating SQL prompt: {e}")
+
+
+def _basic_table_selection(semantic_results: dict, max_tables: int = 4) -> list:
+    """
+    Basic fallback table selection if SimpleTableSelector is not available.
+    """
+    from collections import defaultdict
+    
+    table_scores = defaultdict(float)
+    
+    # Get scores from columns
+    for col in semantic_results.get('columns', []):
+        table = col.get('table')
+        score = col.get('score', 0)
+        if table and score > table_scores[table]:
+            table_scores[table] = score
+    
+    # Get scores from tables
+    for tbl in semantic_results.get('tables', []):
+        table = tbl.get('table')
+        score = tbl.get('score', 0)
+        if table and score > table_scores[table]:
+            table_scores[table] = score
+    
+    # Return top tables sorted by score
+    sorted_tables = sorted(table_scores.items(), key=lambda x: x[1], reverse=True)
+    return [table for table, score in sorted_tables[:max_tables] if score >= 0.15]
 
 
 def display_analysis_summary(analysis_data: dict):
@@ -964,13 +970,16 @@ if __name__ == "__main__":
                 for table in relevant_tables:
                     print(f"   • {table}")
                 
-                # Suggest JOIN strategy
-                if 'cust' in relevant_tables and any('ord' in t for t in relevant_tables):
-                    print(f"   💡 Likely JOIN: customers ↔ orders (ct_id)")
-                if 'prd_mstr' in relevant_tables and 'ord_ln' in relevant_tables:
-                    print(f"   💡 Likely JOIN: products ↔ order_lines (prd_id)")
+                # Simple JOIN suggestions based on common patterns
+                print(f"   💡 Common JOIN patterns:")
+                if 'cust' in relevant_tables and 'ord_hdr' in relevant_tables:
+                    print(f"      - customers ↔ orders (ct_id)")
                 if 'ord_hdr' in relevant_tables and 'ord_ln' in relevant_tables:
-                    print(f"   💡 Likely JOIN: order_header ↔ order_lines (ord_id)")
+                    print(f"      - order_header ↔ order_lines (ord_id)")
+                if 'ord_ln' in relevant_tables and 'prd_mstr' in relevant_tables:
+                    print(f"      - order_lines ↔ products (prd_id)")
+                if 'emp_mstr' in relevant_tables:
+                    print(f"      - employees table has mgr_id for hierarchies")
             
             # Complete Generated Prompt
             print(f"\n📋 COMPLETE GENERATED PROMPT")
