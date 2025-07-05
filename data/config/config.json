@@ -1,0 +1,18 @@
+{
+  "vector_store": {
+    "persist_dir": "./data/chroma_db",
+    "verbose": true
+  },
+  "embeddings": {
+    "model_name": "all-MiniLM-L6-v2",
+    "enable_caching": false,
+    "cache_dir": "./data/embeddings_cache"
+  },
+  "schema": {
+    "schema_path": "./data/schemas/tables_schema.json"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  }
+}

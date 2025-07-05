@@ -1,0 +1,27 @@
+# SQL Generator - Enterprise Requirements
+
+## Critical Dependencies
+sentence-transformers>=2.2.2
+chromadb>=0.4.0
+pydantic>=2.0.0
+numpy>=1.21.0
+pathlib2>=2.3.7
+
+## Optional Dependencies
+langchain>=0.1.0  # For advanced prompt templating
+tiktoken>=0.5.0   # For token counting
+openai>=1.0.0     # For LLM integration
+
+## Development Dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+pre-commit>=3.0.0
+
+## Production Dependencies
+uvicorn>=0.20.0   # For API server
+fastapi>=0.100.0  # For REST API
+gunicorn>=21.0.0  # For production WSGI
+python-multipart>=0.0.6  # For file uploads

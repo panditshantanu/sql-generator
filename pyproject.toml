@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sql-generator"
+version = "1.0.0"
+description = "Enterprise-grade SQL generator with semantic search and LLM integration"
+authors = [
+    {name = "Shantanu Pandit", email = "mishantanupandit@gmail.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+keywords = ["sql", "ai", "llm", "database", "semantic-search"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "sentence-transformers>=2.2.2",
+    "chromadb>=0.4.0",
+    "pydantic>=2.0.0",
+    "numpy>=1.21.0",
+    "pathlib2>=2.3.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0", 
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+api = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+    "python-multipart>=0.0.6",
+]
+llm = [
+    "langchain>=0.1.0",
+    "openai>=1.0.0",
+    "tiktoken>=0.5.0",
+]
+all = [
+    "sql-generator[dev,api,llm]"
+]
+
+[project.urls]
+Homepage = "https://github.com/shantanupandit/sql-generator"
+Documentation = "https://sql-generator.readthedocs.io"
+Repository = "https://github.com/shantanupandit/sql-generator.git"
+"Bug Tracker" = "https://github.com/shantanupandit/sql-generator/issues"
+
+[project.scripts]
+sqlgen = "sql_generator.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sql_generator*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --cov=sql_generator --cov-report=html --cov-report=term"
+
+[tool.coverage.run]
+source = ["src/sql_generator"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]

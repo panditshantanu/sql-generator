@@ -1,0 +1,261 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 sql_generator/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 sql_generator/ --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+
+    - name: Check code formatting with Black
+      run: |
+        black --check sql_generator/
+
+    - name: Type checking with MyPy
+      run: |
+        mypy sql_generator/ --ignore-missing-imports
+
+    - name: Test with pytest
+      run: |
+        pytest tests/ -v --cov=sql_generator --cov-report=xml --cov-report=term
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+
+    - name: Security check with Safety
+      run: |
+        safety check
+
+    - name: Security check with Bandit
+      run: |
+        bandit -r sql_generator/ -f json -o bandit-report.json || true
+
+    - name: Upload Bandit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: bandit-results
+        path: bandit-report.json
+
+  build:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist
+        path: dist/
+
+  integration-test:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Create test schema
+      run: |
+        mkdir -p test_data/schemas
+        cat > test_data/schemas/test_schema.json << 'EOF'
+        {
+          "tables": {
+            "users": {
+              "description": "User account information",
+              "columns": {
+                "id": {
+                  "type": "INTEGER",
+                  "description": "User ID"
+                },
+                "name": {
+                  "type": "VARCHAR(100)",
+                  "description": "User name"
+                }
+              }
+            }
+          }
+        }
+        EOF
+
+    - name: Test CLI functionality
+      run: |
+        # Test help command
+        python -m sql_generator.cli --help
+        
+        # Test with custom schema
+        python -m sql_generator.cli --schema-path test_data/schemas/test_schema.json --setup
+        
+        # Test basic query
+        python -m sql_generator.cli --schema-path test_data/schemas/test_schema.json --query "find users"
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install documentation dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Check documentation links
+      run: |
+        # Check if all documentation files exist
+        test -f README.md
+        test -f CONTRIBUTING.md
+        test -f SETUP.md
+        test -f SECURITY.md
+        test -f CHANGELOG.md
+        test -f docs/API.md
+
+    - name: Validate documentation format
+      run: |
+        # Basic markdown validation
+        python -c "
+        import re
+        
+        # Check README has required sections
+        with open('README.md', 'r') as f:
+            content = f.read()
+            assert '## Features' in content
+            assert '## Quick Start' in content
+            assert '## Documentation' in content
+            print('README.md validation passed')
+        
+        # Check API docs exist
+        with open('docs/API.md', 'r') as f:
+            content = f.read()
+            assert '## Overview' in content
+            print('API.md validation passed')
+        "
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, security, build, integration-test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: dist
+        path: dist/
+
+    - name: Check version increment
+      run: |
+        # Basic version check (can be enhanced)
+        python -c "
+        import re
+        with open('pyproject.toml', 'r') as f:
+            content = f.read()
+            version_match = re.search(r'version = \"([^\"]+)\"', content)
+            if version_match:
+                version = version_match.group(1)
+                print(f'Version: {version}')
+            else:
+                raise ValueError('Version not found in pyproject.toml')
+        "
+
+    # Uncomment when ready to publish to PyPI
+    # - name: Publish to PyPI
+    #   env:
+    #     TWINE_USERNAME: __token__
+    #     TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+    #   run: |
+    #     twine upload dist/*

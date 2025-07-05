@@ -1,0 +1,154 @@
+{
+  "tables": [
+    {
+      "table_name": "cust",
+      "aliases": ["customers", "customer", "c"],
+      "display_name": "Customers",
+      "description": "Stores customer profiles and contact details.",
+      "columns": {
+        "ct_id": { "name": "Customer ID", "description": "Unique identifier for each customer.", "type": "INT", "nullable": false, "aliases": ["customer_id", "client_id"] },
+        "fnm": { "name": "First Name", "description": "Customer's first name.", "type": "VARCHAR", "length": 50, "nullable": false },
+        "lnm": { "name": "Last Name", "description": "Customer's last name.", "type": "VARCHAR", "length": 50, "nullable": false },
+        "eml": { "name": "Email", "description": "Customer's email address.", "type": "VARCHAR", "length": 100, "nullable": true },
+        "phn_no": { "name": "Phone Number", "description": "Customer's contact number.", "type": "VARCHAR", "length": 20, "nullable": true },
+        "cr_at": { "name": "Created At", "description": "Timestamp when the customer was created.", "type": "TIMESTAMP", "nullable": true },
+        "sts_cd": { "name": "Status Code", "description": "Current status of the customer (e.g., ACTIVE, INACTIVE).", "type": "VARCHAR", "length": 10, "nullable": true },
+        "loy_pts": { "name": "Loyalty Points", "description": "Points earned by the customer through purchases.", "type": "INT", "nullable": true },
+        "rg_cd": { "name": "Region Code", "description": "Geographic region associated with the customer.", "type": "VARCHAR", "length": 50, "nullable": true }
+      }
+    },
+    {
+      "table_name": "prd_mstr",
+      "aliases": ["products", "product", "prod", "p"],
+      "display_name": "Products",
+      "description": "Master table containing product catalog information.",
+      "columns": {
+        "prd_id": { "name": "Product ID", "description": "Unique identifier for each product.", "type": "INT", "nullable": false },
+        "prd_nm": { "name": "Product Name", "description": "Name of the product.", "type": "VARCHAR", "length": 100, "nullable": false },
+        "cat_cd": { "name": "Category Code", "description": "Code representing the product category.", "type": "VARCHAR", "length": 50, "nullable": true },
+        "br_cd": { "name": "Brand Code", "description": "Code representing the product brand.", "type": "VARCHAR", "length": 50, "nullable": true },
+        "prc": { "name": "Price", "description": "Unit price of the product.", "type": "DECIMAL", "precision": [10, 2], "nullable": true },
+        "stk_qty": { "name": "Stock Quantity", "description": "Available quantity in stock.", "type": "INT", "nullable": true },
+        "actv_flg": { "name": "Active Flag", "description": "Indicates whether the product is active (Y/N).", "type": "CHAR", "length": 1, "nullable": true },
+        "crt_ts": { "name": "Created Timestamp", "description": "Timestamp when the product was added.", "type": "TIMESTAMP", "nullable": true },
+        "upd_ts": { "name": "Updated Timestamp", "description": "Timestamp of the last update to the product.", "type": "TIMESTAMP", "nullable": true }
+      }
+    },
+    {
+      "table_name": "ord_hdr",
+      "aliases": ["orders", "order_header", "oh"],
+      "display_name": "Order Header",
+      "description": "Contains high-level order information including customer, date, and total.",
+      "columns": {
+        "ord_id": { "name": "Order ID", "description": "Unique identifier for the order.", "type": "INT", "nullable": false },
+        "ct_id": { "name": "Customer ID", "description": "Foreign key to the customer placing the order.", "type": "INT", "nullable": false },
+        "ord_dt": { "name": "Order Date", "description": "Date when the order was placed.", "type": "DATE", "nullable": false },
+        "ttl_amt": { "name": "Total Amount", "description": "Total monetary value of the order.", "type": "DECIMAL", "precision": [12, 2], "nullable": true },
+        "sts_cd": { "name": "Status Code", "description": "Current status of the order (e.g., PENDING, SHIPPED).", "type": "VARCHAR", "length": 10, "nullable": true },
+        "pm_cd": { "name": "Payment Method Code", "description": "Code representing the payment method used.", "type": "VARCHAR", "length": 30, "nullable": true },
+        "shp_addr": { "name": "Shipping Address", "description": "Address where the order is to be delivered.", "type": "TEXT", "nullable": true },
+        "bil_addr": { "name": "Billing Address", "description": "Address used for billing purposes.", "type": "TEXT", "nullable": true },
+        "cr_at": { "name": "Created At", "description": "Timestamp when the order was created.", "type": "TIMESTAMP", "nullable": true }
+      }
+    },
+    {
+      "table_name": "ord_ln",
+      "aliases": ["order_lines", "order_items", "line_items", "ol"],
+      "display_name": "Order Line Items",
+      "description": "Contains individual line items for each order.",
+      "columns": {
+        "ln_id": { "name": "Line Item ID", "description": "Unique identifier for the line item.", "type": "INT", "nullable": false },
+        "ord_id": { "name": "Order ID", "description": "Foreign key to the order header.", "type": "INT", "nullable": false },
+        "prd_id": { "name": "Product ID", "description": "Foreign key to the product.", "type": "INT", "nullable": false },
+        "qty": { "name": "Quantity", "description": "Number of units ordered.", "type": "INT", "nullable": false },
+        "u_prc": { "name": "Unit Price", "description": "Price per unit of the product.", "type": "DECIMAL", "precision": [10, 2], "nullable": true },
+        "dsc_amt": { "name": "Discount Amount", "description": "Discount applied to the line item.", "type": "DECIMAL", "precision": [10, 2], "nullable": true },
+        "tx_amt": { "name": "Tax Amount", "description": "Tax applied to the line item.", "type": "DECIMAL", "precision": [10, 2], "nullable": true },
+        "ln_ttl": { "name": "Line Total", "description": "Total cost for the line item after discounts and taxes.", "type": "DECIMAL", "precision": [12, 2], "nullable": true }
+      }
+    },
+    {
+      "table_name": "emp_mstr",
+      "aliases": ["employees", "employee", "emp", "e"],
+      "display_name": "Employees",
+      "description": "Stores employee records and organizational hierarchy.",
+      "columns": {
+        "emp_id": { "name": "Employee ID", "description": "Unique identifier for the employee.", "type": "INT", "nullable": false },
+        "fnm": { "name": "First Name", "description": "Employee's first name.", "type": "VARCHAR", "length": 50, "nullable": false },
+        "lnm": { "name": "Last Name", "description": "Employee's last name.", "type": "VARCHAR", "length": 50, "nullable": false },
+        "eml": { "name": "Email", "description": "Employee's email address.", "type": "VARCHAR", "length": 100, "nullable": true },
+        "dept_cd": { "name": "Department Code", "description": "Code representing the department.", "type": "VARCHAR", "length": 10, "nullable": true },
+        "rl_cd": { "name": "Role Code", "description": "Code representing the employee's role.", "type": "VARCHAR", "length": 10, "nullable": true },
+        "hr_dt": { "name": "Hire Date", "description": "Date the employee was hired.", "type": "DATE", "nullable": true },
+        "mgr_id": { "name": "Manager ID", "description": "Employee ID of the manager.", "type": "INT", "nullable": true },
+        "sts_cd": { "name": "Status Code", "description": "Employment status (e.g., ACTIVE, TERMINATED).", "type": "VARCHAR", "length": 10, "nullable": true }
+      }
+    },
+    {
+      "table_name": "aud_log",
+      "aliases": ["audit_logs", "audit", "logs", "al"],
+      "display_name": "Audit Logs",
+      "description": "Tracks user actions and system events for auditing purposes.",
+      "columns": {
+        "lg_id": { "name": "Log ID", "description": "Unique identifier for the log entry.", "type": "INT", "nullable": false },
+        "usr_id": { "name": "User ID", "description": "ID of the user who performed the action.", "type": "INT", "nullable": true },
+        "act_cd": { "name": "Action Code", "description": "Code representing the action performed.", "type": "VARCHAR", "length": 50, "nullable": true },
+        "ent_typ": { "name": "Entity Type", "description": "Type of entity affected (e.g., ORDER, CUSTOMER).", "type": "VARCHAR", "length": 30, "nullable": true },
+        "ent_id": { "name": "Entity ID", "description": "ID of the affected entity.", "type": "INT", "nullable": true },
+        "ts": { "name": "Timestamp", "description": "Time when the action occurred.", "type": "TIMESTAMP", "nullable": true },
+        "ip": { "name": "IP Address", "description": "IP address of the user.", "type": "VARCHAR", "length": 45, "nullable": true },
+        "ua_txt": { "name": "User Agent", "description": "Browser or client used by the user.", "type": "TEXT", "nullable": true },
+        "succ_flg": { "name": "Success Flag", "description": "Indicates whether the action was successful (Y/N).", "type": "CHAR", "length": 1, "nullable": true }
+      }
+    },
+    {
+      "table_name": "mkt_cmp",
+      "aliases": ["marketing_campaigns", "campaigns", "marketing", "mc"],
+      "display_name": "Marketing Campaigns",
+      "description": "Stores metadata about marketing campaigns including budget, duration, and channel.",
+      "columns": {
+        "cmp_id": { "name": "Campaign ID", "description": "Unique identifier for the marketing campaign.", "type": "INT", "nullable": false },
+        "cmp_nm": { "name": "Campaign Name", "description": "Name of the marketing campaign.", "type": "VARCHAR", "length": 100, "nullable": false },
+        "strt_dt": { "name": "Start Date", "description": "Date when the campaign starts.", "type": "DATE", "nullable": false },
+        "end_dt": { "name": "End Date", "description": "Date when the campaign ends.", "type": "DATE", "nullable": true },
+        "bud_amt": { "name": "Budget Amount", "description": "Total budget allocated for the campaign.", "type": "DECIMAL", "precision": [12, 2], "nullable": true },
+        "ch_cd": { "name": "Channel Code", "description": "Code representing the marketing channel (e.g., EMAIL, SOCIAL).", "type": "VARCHAR", "length": 10, "nullable": true },
+        "sts_cd": { "name": "Status Code", "description": "Current status of the campaign (e.g., ACTIVE, COMPLETED).", "type": "VARCHAR", "length": 10, "nullable": true },
+        "crt_by": { "name": "Created By", "description": "User who created the campaign record.", "type": "VARCHAR", "length": 50, "nullable": true },
+        "crt_ts": { "name": "Created Timestamp", "description": "Timestamp when the campaign was created.", "type": "TIMESTAMP", "nullable": true }
+      }
+    },
+    {
+      "table_name": "wh_mstr",
+      "aliases": ["warehouses", "warehouse", "wh"],
+      "display_name": "Warehouses",
+      "description": "Contains information about warehouse facilities and their operational status.",
+      "columns": {
+        "wh_id": { "name": "Warehouse ID", "description": "Unique identifier for the warehouse.", "type": "INT", "nullable": false },
+        "wh_nm": { "name": "Warehouse Name", "description": "Name of the warehouse.", "type": "VARCHAR", "length": 100, "nullable": false },
+        "loc_txt": { "name": "Location", "description": "Physical location of the warehouse.", "type": "VARCHAR", "length": 100, "nullable": true },
+        "cap": { "name": "Capacity", "description": "Storage capacity of the warehouse.", "type": "INT", "nullable": true },
+        "mgr_nm": { "name": "Manager Name", "description": "Name of the warehouse manager.", "type": "VARCHAR", "length": 100, "nullable": true },
+        "cnt_no": { "name": "Contact Number", "description": "Phone number for the warehouse.", "type": "VARCHAR", "length": 20, "nullable": true },
+        "opn_flg": { "name": "Operational Flag", "description": "Indicates whether the warehouse is operational (Y/N).", "type": "CHAR", "length": 1, "nullable": true },
+        "crt_ts": { "name": "Created Timestamp", "description": "Timestamp when the warehouse record was created.", "type": "TIMESTAMP", "nullable": true },
+        "upd_ts": { "name": "Updated Timestamp", "description": "Timestamp of the last update to the warehouse record.", "type": "TIMESTAMP", "nullable": true }
+      }
+    },
+    {
+      "table_name": "sys_cfg",
+      "aliases": ["system_config", "config", "configuration", "sc"],
+      "display_name": "System Configuration",
+      "description": "Stores application-level configuration settings and metadata.",
+      "columns": {
+        "cfg_key": { "name": "Config Key", "description": "Unique key for the configuration setting.", "type": "VARCHAR", "length": 100, "nullable": false },
+        "cfg_val": { "name": "Config Value", "description": "Value assigned to the configuration key.", "type": "TEXT", "nullable": true },
+        "desc_txt": { "name": "Description", "description": "Description of the configuration setting.", "type": "TEXT", "nullable": true },
+        "upd_by": { "name": "Updated By", "description": "User who last updated the configuration.", "type": "VARCHAR", "length": 50, "nullable": true },
+        "upd_ts": { "name": "Updated Timestamp", "description": "Timestamp of the last update.", "type": "TIMESTAMP", "nullable": true },
+        "actv_flg": { "name": "Active Flag", "description": "Indicates whether the configuration is active (Y/N).", "type": "CHAR", "length": 1, "nullable": true },
+        "env_cd": { "name": "Environment Code", "description": "Code representing the environment (e.g., DEV, PROD).", "type": "VARCHAR", "length": 10, "nullable": true }
+      }
+    }
+  ]
+}
