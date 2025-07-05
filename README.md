@@ -22,7 +22,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/shantanupandit/sql-generator.git
+git clone https://github.com/panditshantanu/sql-generator.git
 cd sql-generator
 
 # Install dependencies
@@ -284,7 +284,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - 📧 **Email**: mishantanupandit@gmail.com
-- 📋 **Issues**: [GitHub Issues](https://github.com/shantanupandit/sql-generator/issues)
+- 📋 **Issues**: [GitHub Issues](https://github.com/panditshantanu/sql-generator/issues)
 - 📖 **Documentation**: [Full Documentation](https://sql-generator.readthedocs.io)
 
 ---

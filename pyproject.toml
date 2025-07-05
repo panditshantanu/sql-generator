@@ -58,10 +58,10 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/shantanupandit/sql-generator"
+Homepage = "https://github.com/panditshantanu/sql-generator"
 Documentation = "https://sql-generator.readthedocs.io"
-Repository = "https://github.com/shantanupandit/sql-generator.git"
-"Bug Tracker" = "https://github.com/shantanupandit/sql-generator/issues"
+Repository = "https://github.com/panditshantanu/sql-generator.git"
+"Bug Tracker" = "https://github.com/panditshantanu/sql-generator/issues"
 
 [project.scripts]
 sqlgen = "sql_generator.main:main"

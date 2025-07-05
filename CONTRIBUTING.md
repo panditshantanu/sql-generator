@@ -31,14 +31,14 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 2. Clone your fork locally:
 
 ```bash
-git clone https://github.com/shantanupandit/sql-generator.git
+git clone https://github.com/panditshantanu/sql-generator.git
 cd sql-generator
 ```
 
 3. Add the upstream repository:
 
 ```bash
-git remote add upstream https://github.com/shantanupandit/sql-generator.git
+git remote add upstream https://github.com/panditshantanu/sql-generator.git
 ```
 
 ## 🛠️ Development Setup

@@ -186,7 +186,7 @@ docker run -v ./data:/app/data sql-generator:latest
 
 Security advisories will be published on:
 
-- [GitHub Security Advisories](https://github.com/shantanupandit/sql-generator/security/advisories)
+- [GitHub Security Advisories](https://github.com/panditshantanu/sql-generator/security/advisories)
 - Project documentation
 - Release notes
 
