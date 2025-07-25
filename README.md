@@ -432,7 +432,7 @@ Configuration is in `data/config/config.json`:
 
 - **Issues**: [GitHub Issues](https://github.com/company/sql-generator/issues)
 - **Documentation**: [Full docs coming soon]
-- **Enterprise Support**: Contact enterprise@sqlgenerator.com
+- **Enterprise Support**: Contact mishantanupandit@gmail.com
 
 ---
 
