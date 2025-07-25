@@ -1,0 +1,43 @@
+Companies Table:
+- company_id (Primary Key)
+- company_name (VARCHAR, UNIQUE)
+- ticker_symbol (VARCHAR, UNIQUE)
+- exchange (VARCHAR) - NYSE, NASDAQ, etc.
+- sector (VARCHAR)
+- industry (VARCHAR)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+Documents Table:
+- document_id (Primary Key)
+- company_id (Foreign Key → Companies.company_id)
+- document_filename (VARCHAR)
+- document_type (VARCHAR) - "DEF 14A", "10-K", etc.
+- filing_date (DATE)
+- fiscal_year (INTEGER)
+- file_path (VARCHAR) - storage location
+- file_size (BIGINT)
+- processing_status (ENUM) - pending, processing, completed, failed
+- processed_at (TIMESTAMP)
+- created_at (TIMESTAMP)
+
+Proposals Table:
+- proposal_id (Primary Key)
+- document_id (Foreign Key → Documents.document_id)
+- company_id (Foreign Key → Companies.company_id)
+- proposal_sequence_number (INTEGER)
+- proposal_title (TEXT)
+- proposal_description (TEXT)
+- proponent_summary (TEXT)
+- board_summary (TEXT)
+- proposal_type (VARCHAR) [Executive Compensation, Board Election, etc.]
+- board_recommendation (ENUM) [FOR, AGAINST, NO_RECOMMENDATION]
+- voting_results_for (BIGINT) [if available]
+- voting_results_against (BIGINT) [if available]
+- voting_results_abstain (BIGINT) [if available]
+- proposal_status (ENUM) [PASSED, FAILED, WITHDRAWN]
+- page_reference (VARCHAR) [source page in PDF]
+- extraction_confidence (DECIMAL) [AI confidence score]
+- processing_notes (TEXT) [any extraction issues]
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
