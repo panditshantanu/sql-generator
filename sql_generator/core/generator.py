@@ -31,6 +31,11 @@ class SQLResult:
         self.metadata = metadata or {}
         self.prompt = prompt
     
+    @property
+    def sql_query(self):
+        """Alias for sql attribute for compatibility."""
+        return self.sql
+    
     def __str__(self) -> str:
         return self.sql
     
@@ -117,29 +122,42 @@ class SQLGenerator:
             # Search for relevant schema elements
             search_results = self.searcher.search(query)
             
-            # Generate prompt for LLM using the prompt generator
-            prompt = self.prompt_generator.generate_sql_query(
+            # Search for relevant schema elements
+            search_results = self.searcher.search(query)
+            
+            # Extract tables from search results
+            selected_tables = self._extract_tables_from_results(search_results)
+            
+            # Generate SQL using LLM via the prompt generator
+            llm_result = self.prompt_generator.generate_sql_with_llm(
                 user_query=query,
-                search_results=search_results,
+                selected_tables=selected_tables,
                 **kwargs
             )
             
-            # The prompt generator stores the same prompt internally
-            stored_prompt = self.prompt_generator.get_last_prompt()
-            
-            # Calculate confidence based on search results
-            confidence = self._calculate_confidence(search_results)
-            
-            # Create metadata
-            metadata = {
-                "search_results": search_results,
-                "query_length": len(query),
-                "tables_used": self._extract_tables_from_results(search_results),
-                "original_query": query
-            }
-            
-            # Return the prompt as the "sql" field (for LLM consumption)
-            return SQLResult(sql=prompt, confidence=confidence, metadata=metadata, prompt=stored_prompt)
+            # Check if LLM generation was successful
+            if llm_result.get("success", False):
+                sql_query = llm_result.get("sql_query", "")
+                confidence = self._calculate_confidence(search_results)
+                
+                # Create metadata
+                metadata = {
+                    "search_results": search_results,
+                    "query_length": len(query),
+                    "tables_used": self._extract_tables_from_results(search_results),
+                    "original_query": query,
+                    "llm_provider": llm_result.get("provider", "unknown"),
+                    "llm_model": llm_result.get("model", "unknown"),
+                    "response_time": llm_result.get("response_time", 0),
+                    "tokens_used": llm_result.get("tokens_used", 0)
+                }
+                
+                # Return the actual SQL query
+                return SQLResult(sql=sql_query, confidence=confidence, metadata=metadata, prompt=llm_result.get("prompt_used", ""))
+            else:
+                # LLM failed, return error
+                error_msg = llm_result.get("error", "Unknown LLM error")
+                return SQLResult(sql=f"-- Error: {error_msg}", confidence=0.0, metadata={"error": error_msg})
             
         except Exception as e:
             self.logger.error(f"SQL generation failed: {e}")
@@ -199,7 +217,7 @@ class SQLGenerator:
         Args:
             query: Natural language query to validate
             
-        Returns:
+         Returns:
             True if query appears valid, False otherwise
         """
         if not query or not query.strip():

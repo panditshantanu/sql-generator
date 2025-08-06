@@ -47,6 +47,22 @@ except ImportError:
     def get_config():
         return {}
 
+# Import LLM service with fallback
+try:
+    from .llm_service import LLMService, LLMResponse
+    LLM_SERVICE_AVAILABLE = True
+except ImportError:
+    LLM_SERVICE_AVAILABLE = False
+    class LLMService:
+        def __init__(self, *args, **kwargs):
+            pass
+        def generate_sql(self, *args, **kwargs):
+            return None
+    class LLMResponse:
+        def __init__(self, *args, **kwargs):
+            self.success = False
+            self.error = "LLM service not available"
+
 
 class SQLPromptGenerator:
     """
@@ -59,14 +75,28 @@ class SQLPromptGenerator:
     - Robust error handling and fallbacks
     """
     
-    def __init__(self, schema_path: Optional[str] = None):
+    def __init__(self, schema_path: Optional[str] = None, enable_llm: bool = True):
         """
         Initialize the SQL prompt generator.
         
         Args:
             schema_path: Path to schema JSON file (uses config if None)
+            enable_llm: Whether to enable actual LLM integration
         """
         self.logger = logging.getLogger(__name__)
+        self.enable_llm = enable_llm and LLM_SERVICE_AVAILABLE
+        
+        # Initialize LLM service if enabled
+        if self.enable_llm:
+            try:
+                self.llm_service = LLMService()
+                self.logger.info("LLM service initialized successfully")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize LLM service: {e}")
+                self.llm_service = None
+                self.enable_llm = False
+        else:
+            self.llm_service = None
         
         # Get schema path from config if not provided
         if schema_path is None:
@@ -472,6 +502,96 @@ SQL Query:"""
             pass
         
         return tables
+
+    def generate_sql_with_llm(
+        self,
+        user_query: str,
+        selected_tables: List[str],
+        preferred_provider: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Generate actual SQL query using LLM integration.
+        
+        Args:
+            user_query: Natural language query
+            selected_tables: List of relevant table names
+            preferred_provider: Preferred LLM provider
+            
+        Returns:
+            Dictionary with SQL query, analysis, and metadata
+        """
+        if not self.enable_llm or not self.llm_service:
+            return {
+                "success": False,
+                "error": "LLM service not available",
+                "sql_query": "",
+                "prompt_used": "",
+                "provider": "none",
+                "analysis": {}
+            }
+        
+        try:
+            # Generate the prompt
+            prompt = self.auto_generate_prompt(user_query, selected_tables)
+            
+            # Generate SQL using LLM
+            llm_response = self.llm_service.generate_sql(
+                prompt, 
+                preferred_provider=preferred_provider
+            )
+            
+            if llm_response.success:
+                return {
+                    "success": True,
+                    "sql_query": llm_response.sql_query,
+                    "prompt_used": prompt,
+                    "provider": llm_response.provider,
+                    "model": llm_response.model,
+                    "tokens_used": llm_response.tokens_used,
+                    "response_time": llm_response.response_time,
+                    "raw_response": llm_response.raw_response,
+                    "selected_tables": selected_tables,
+                    "analysis": {
+                        "query_type": self._analyze_query_type(user_query),
+                        "complexity": "multi-table" if len(selected_tables) > 1 else "single-table",
+                        "tables_count": len(selected_tables)
+                    }
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": llm_response.error,
+                    "sql_query": "",
+                    "prompt_used": prompt,
+                    "provider": llm_response.provider,
+                    "analysis": {}
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error in SQL generation: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "sql_query": "",
+                "prompt_used": "",
+                "provider": "none",
+                "analysis": {}
+            }
+    
+    def _analyze_query_type(self, user_query: str) -> str:
+        """Analyze the type of query for metadata."""
+        query_lower = user_query.lower()
+        
+        if any(word in query_lower for word in ['count', 'sum', 'total', 'average', 'avg']):
+            return "aggregation"
+        elif any(word in query_lower for word in ['join', 'between', 'across']):
+            return "relational"
+        elif any(word in query_lower for word in ['list', 'show', 'display', 'get']):
+            return "retrieval"
+        elif any(word in query_lower for word in ['top', 'bottom', 'max', 'min', 'highest', 'lowest']):
+            return "ranking"
+        else:
+            return "general"
 
 # Legacy class name for backwards compatibility
 class PromptGenerator(SQLPromptGenerator):

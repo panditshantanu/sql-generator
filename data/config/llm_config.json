@@ -1,0 +1,25 @@
+{
+  "default_provider": "local",
+  "providers": {
+    "local": {
+      "model": "codellama:7b",
+      "api_key": "http://localhost:11434",
+      "max_tokens": 1500,
+      "temperature": 0.1,
+      "timeout": 90,
+      "max_retries": 3,
+      "retry_delay": 2.0
+    },
+    "local_backup": {
+      "model": "codellama:7b",
+      "api_key": "http://localhost:11434",
+      "max_tokens": 1000,
+      "temperature": 0.1,
+      "timeout": 60,
+      "max_retries": 2,
+      "retry_delay": 2.0
+    }
+  },
+  "enable_caching": true,
+  "fallback_providers": ["local", "local_backup"]
+}

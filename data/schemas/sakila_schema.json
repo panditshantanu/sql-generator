@@ -1,0 +1,139 @@
+{
+  "tables": [
+    {
+      "table_name": "customer",
+      "aliases": ["customers", "client", "c"],
+      "display_name": "Customers",
+      "description": "Store customer information including personal details and rental history.",
+      "columns": {
+        "customer_id": { "name": "Customer ID", "description": "Unique identifier for each customer.", "type": "INT", "nullable": false, "aliases": ["cust_id", "id"] },
+        "store_id": { "name": "Store ID", "description": "Store where customer is registered.", "type": "TINYINT", "nullable": false },
+        "first_name": { "name": "First Name", "description": "Customer's first name.", "type": "VARCHAR", "length": 45, "nullable": false },
+        "last_name": { "name": "Last Name", "description": "Customer's last name.", "type": "VARCHAR", "length": 45, "nullable": false },
+        "email": { "name": "Email", "description": "Customer's email address.", "type": "VARCHAR", "length": 50, "nullable": true },
+        "address_id": { "name": "Address ID", "description": "Foreign key to address table.", "type": "SMALLINT", "nullable": false },
+        "active": { "name": "Active", "description": "Whether customer is active (1) or not (0).", "type": "BOOLEAN", "nullable": false },
+        "create_date": { "name": "Create Date", "description": "Date when customer was added.", "type": "DATETIME", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time customer info was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "film",
+      "aliases": ["films", "movie", "movies", "f"],
+      "display_name": "Films",
+      "description": "Catalog of all available films in the video store.",
+      "columns": {
+        "film_id": { "name": "Film ID", "description": "Unique identifier for each film.", "type": "INT", "nullable": false },
+        "title": { "name": "Title", "description": "Title of the film.", "type": "VARCHAR", "length": 255, "nullable": false },
+        "description": { "name": "Description", "description": "Brief description of the film.", "type": "TEXT", "nullable": true },
+        "release_year": { "name": "Release Year", "description": "Year the film was released.", "type": "YEAR", "nullable": true },
+        "language_id": { "name": "Language ID", "description": "Foreign key to language table.", "type": "TINYINT", "nullable": false },
+        "rental_duration": { "name": "Rental Duration", "description": "Number of days film can be rented.", "type": "TINYINT", "nullable": false },
+        "rental_rate": { "name": "Rental Rate", "description": "Cost to rent the film.", "type": "DECIMAL", "precision": [4, 2], "nullable": false },
+        "length": { "name": "Length", "description": "Duration of film in minutes.", "type": "SMALLINT", "nullable": true },
+        "replacement_cost": { "name": "Replacement Cost", "description": "Cost to replace if lost.", "type": "DECIMAL", "precision": [5, 2], "nullable": false },
+        "rating": { "name": "Rating", "description": "MPAA film rating (G, PG, PG-13, R, NC-17).", "type": "ENUM", "nullable": true },
+        "special_features": { "name": "Special Features", "description": "Special features included with film.", "type": "SET", "nullable": true }
+      }
+    },
+    {
+      "table_name": "rental",
+      "aliases": ["rentals", "rent", "r"],
+      "display_name": "Rentals",
+      "description": "Record of each film rental transaction.",
+      "columns": {
+        "rental_id": { "name": "Rental ID", "description": "Unique identifier for each rental.", "type": "INT", "nullable": false },
+        "rental_date": { "name": "Rental Date", "description": "Date and time film was rented.", "type": "DATETIME", "nullable": false },
+        "inventory_id": { "name": "Inventory ID", "description": "Foreign key to inventory table.", "type": "MEDIUMINT", "nullable": false },
+        "customer_id": { "name": "Customer ID", "description": "Foreign key to customer table.", "type": "SMALLINT", "nullable": false },
+        "return_date": { "name": "Return Date", "description": "Date and time film was returned.", "type": "DATETIME", "nullable": true },
+        "staff_id": { "name": "Staff ID", "description": "Foreign key to staff table.", "type": "TINYINT", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time rental info was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "payment",
+      "aliases": ["payments", "pay", "p"],
+      "display_name": "Payments",
+      "description": "Record of each payment made by customers.",
+      "columns": {
+        "payment_id": { "name": "Payment ID", "description": "Unique identifier for each payment.", "type": "SMALLINT", "nullable": false },
+        "customer_id": { "name": "Customer ID", "description": "Foreign key to customer table.", "type": "SMALLINT", "nullable": false },
+        "staff_id": { "name": "Staff ID", "description": "Foreign key to staff table.", "type": "TINYINT", "nullable": false },
+        "rental_id": { "name": "Rental ID", "description": "Foreign key to rental table.", "type": "INT", "nullable": true },
+        "amount": { "name": "Amount", "description": "Payment amount.", "type": "DECIMAL", "precision": [5, 2], "nullable": false },
+        "payment_date": { "name": "Payment Date", "description": "Date and time payment was made.", "type": "DATETIME", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time payment info was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "inventory",
+      "aliases": ["stock", "inv", "i"],
+      "display_name": "Inventory",
+      "description": "Physical copies of films available for rent.",
+      "columns": {
+        "inventory_id": { "name": "Inventory ID", "description": "Unique identifier for each inventory item.", "type": "MEDIUMINT", "nullable": false },
+        "film_id": { "name": "Film ID", "description": "Foreign key to film table.", "type": "SMALLINT", "nullable": false },
+        "store_id": { "name": "Store ID", "description": "Foreign key to store table.", "type": "TINYINT", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time inventory was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "actor",
+      "aliases": ["actors", "act", "a"],
+      "display_name": "Actors",
+      "description": "Information about actors who appear in films.",
+      "columns": {
+        "actor_id": { "name": "Actor ID", "description": "Unique identifier for each actor.", "type": "SMALLINT", "nullable": false },
+        "first_name": { "name": "First Name", "description": "Actor's first name.", "type": "VARCHAR", "length": 45, "nullable": false },
+        "last_name": { "name": "Last Name", "description": "Actor's last name.", "type": "VARCHAR", "length": 45, "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time actor info was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "film_actor",
+      "aliases": ["cast", "film_cast", "fa"],
+      "display_name": "Film Cast",
+      "description": "Junction table linking films and actors.",
+      "columns": {
+        "actor_id": { "name": "Actor ID", "description": "Foreign key to actor table.", "type": "SMALLINT", "nullable": false },
+        "film_id": { "name": "Film ID", "description": "Foreign key to film table.", "type": "SMALLINT", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time record was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "category",
+      "aliases": ["categories", "genre", "cat", "g"],
+      "display_name": "Categories",
+      "description": "Film categories/genres available in the store.",
+      "columns": {
+        "category_id": { "name": "Category ID", "description": "Unique identifier for each category.", "type": "TINYINT", "nullable": false },
+        "name": { "name": "Name", "description": "Category name (e.g., Action, Comedy, Drama).", "type": "VARCHAR", "length": 25, "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time category was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "film_category",
+      "aliases": ["film_genres", "fc"],
+      "display_name": "Film Categories",
+      "description": "Junction table linking films and categories.",
+      "columns": {
+        "film_id": { "name": "Film ID", "description": "Foreign key to film table.", "type": "SMALLINT", "nullable": false },
+        "category_id": { "name": "Category ID", "description": "Foreign key to category table.", "type": "TINYINT", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time record was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    },
+    {
+      "table_name": "store",
+      "aliases": ["stores", "shop", "s"],
+      "display_name": "Stores",
+      "description": "Physical store locations.",
+      "columns": {
+        "store_id": { "name": "Store ID", "description": "Unique identifier for each store.", "type": "TINYINT", "nullable": false },
+        "manager_staff_id": { "name": "Manager Staff ID", "description": "Foreign key to staff table for manager.", "type": "TINYINT", "nullable": false },
+        "address_id": { "name": "Address ID", "description": "Foreign key to address table.", "type": "SMALLINT", "nullable": false },
+        "last_update": { "name": "Last Update", "description": "Last time store info was updated.", "type": "TIMESTAMP", "nullable": false }
+      }
+    }
+  ]
+}

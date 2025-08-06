@@ -526,6 +526,78 @@ def generate_sql_prompt_demo(query: str, collection_prefix: str = "schema"):
         traceback.print_exc()
 
 
+def generate_sql_with_llm(query: str, collection_prefix: str = "schema", preferred_provider: str = None) -> dict:
+    """
+    Complete end-to-end SQL generation using LLM integration.
+    
+    Args:
+        query: The user's natural language query
+        collection_prefix: Prefix for collection names
+        preferred_provider: Preferred LLM provider (openai, anthropic, local)
+        
+    Returns:
+        Dictionary with SQL query, analysis, and metadata
+    """
+    try:
+        # Step 1: Get semantic search results
+        searcher = SchemaSearcher(verbose=True)
+        combined_results = searcher.search_schema(query, k_columns=10, k_tables=5)
+        
+        # Step 2: Simple table selection 
+        try:
+            from simple_table_selector import SimpleTableSelector
+            selector = SimpleTableSelector()
+            selected_tables = selector.select_tables(query, combined_results, max_tables=4)
+        except ImportError:
+            # Fallback to basic selection if simple selector not available
+            selected_tables = _basic_table_selection(combined_results)
+        
+        # Step 3: Generate SQL using LLM
+        try:
+            from llm.sql_prompt_generator import SQLPromptGenerator
+            generator = SQLPromptGenerator(enable_llm=True)
+            
+            # Generate actual SQL query
+            result = generator.generate_sql_with_llm(
+                query, 
+                selected_tables,
+                preferred_provider=preferred_provider
+            )
+            
+            # Add additional analysis data
+            result.update({
+                "original_query": query,
+                "semantic_results": {
+                    "total_columns_found": len(combined_results.get('columns', [])),
+                    "total_tables_found": len(combined_results.get('tables', [])),
+                    "selected_tables": selected_tables
+                },
+                "table_selection_method": "simple_semantic_search"
+            })
+            
+            return result
+            
+        except ImportError as e:
+            return {
+                "success": False,
+                "error": f"Cannot import SQL generator or LLM service: {e}",
+                "sql_query": "",
+                "original_query": query,
+                "semantic_results": {
+                    "selected_tables": selected_tables
+                }
+            }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "sql_query": "",
+            "original_query": query,
+            "semantic_results": {}
+        }
+
+
 def generate_sql_prompt_data(query: str, collection_prefix: str = "schema") -> tuple:
     """
     Generate SQL prompt and return structured data + prompt string.
@@ -806,8 +878,8 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="SQL Generator Schema Processing")
-    parser.add_argument("--mode", choices=["pipeline", "search", "embed", "custom", "sqlprompt", "sqldata", "sqldetail"], default="pipeline",
-                       help="Mode to run: pipeline (full), search (only), embed (only), custom (custom query), sqlprompt (generate SQL prompt), sqldata (return structured data), or sqldetail (detailed analysis)")
+    parser.add_argument("--mode", choices=["pipeline", "search", "embed", "custom", "sqlprompt", "sqldata", "sqldetail", "sqlgen"], default="pipeline",
+                       help="Mode to run: pipeline (full), search (only), embed (only), custom (custom query), sqlprompt (generate SQL prompt), sqldata (return structured data), sqldetail (detailed analysis), or sqlgen (generate actual SQL)")
     parser.add_argument("--clean", action="store_true", 
                        help="Clean existing ChromaDB before processing")
     parser.add_argument("--force", action="store_true",
@@ -817,7 +889,9 @@ if __name__ == "__main__":
     parser.add_argument("--no-demo", action="store_true",
                        help="Skip search demonstration")
     parser.add_argument("--query", type=str,
-                       help="Query for custom, sqlprompt, or sqldata modes")
+                       help="Query for custom, sqlprompt, sqldata, or sqlgen modes")
+    parser.add_argument("--provider", type=str, choices=["openai", "anthropic", "local"],
+                       help="Preferred LLM provider for sqlgen mode")
     
     args = parser.parse_args()
     
@@ -986,6 +1060,62 @@ if __name__ == "__main__":
             print("=" * 80)
             print(prompt_string)
             print("=" * 80)
+            
+        elif args.mode == "sqlgen":
+            query = args.query if args.query else "products never ordered"
+            print(f"\n🚀 END-TO-END SQL GENERATION")
+            print("=" * 80)
+            print(f"📝 Query: '{query}'")
+            print(f"🤖 Provider: {args.provider or 'auto'}")
+            print("=" * 80)
+            
+            # Generate actual SQL using LLM
+            result = generate_sql_with_llm(query, args.prefix, args.provider)
+            
+            if result["success"]:
+                print(f"\n✅ SQL GENERATION SUCCESSFUL")
+                print("-" * 40)
+                print(f"🤖 Provider Used: {result.get('provider', 'unknown')}")
+                print(f"📊 Model: {result.get('model', 'unknown')}")
+                print(f"⏱️ Response Time: {result.get('response_time', 'unknown'):.2f}s" if result.get('response_time') else "⏱️ Response Time: unknown")
+                print(f"🎯 Tables Used: {', '.join(result.get('selected_tables', []))}")
+                print(f"📈 Query Type: {result.get('analysis', {}).get('query_type', 'unknown')}")
+                
+                if result.get('tokens_used'):
+                    print(f"🔢 Tokens Used: {result['tokens_used']}")
+                
+                print(f"\n📋 GENERATED SQL QUERY:")
+                print("=" * 60)
+                print(result["sql_query"])
+                print("=" * 60)
+                
+                # Show usage instructions
+                print(f"\n💡 NEXT STEPS:")
+                print("   1. Review the generated SQL for accuracy")
+                print("   2. Test the query on your database")
+                print("   3. Modify if needed for your specific requirements")
+                
+                # Show analysis details
+                semantic_results = result.get("semantic_results", {})
+                print(f"\n📊 ANALYSIS DETAILS:")
+                print(f"   🔍 Search Results: {semantic_results.get('total_columns_found', 0)} columns, {semantic_results.get('total_tables_found', 0)} tables")
+                print(f"   🎯 Selected Tables: {len(result.get('selected_tables', []))}")
+                print(f"   🧠 Complexity: {result.get('analysis', {}).get('complexity', 'unknown')}")
+                
+            else:
+                print(f"\n❌ SQL GENERATION FAILED")
+                print("-" * 40)
+                print(f"Error: {result.get('error', 'Unknown error')}")
+                
+                # Show what was attempted
+                if result.get("selected_tables"):
+                    print(f"Tables identified: {', '.join(result['selected_tables'])}")
+                
+                print(f"\n💡 TROUBLESHOOTING:")
+                print("   1. Check your LLM provider configuration")
+                print("   2. Verify API keys are set correctly")
+                print("   3. Try a different provider with --provider flag")
+                print("   4. Check if the query is clear and specific")
             
     except KeyboardInterrupt:
         print("\n⚠️  Process interrupted by user")

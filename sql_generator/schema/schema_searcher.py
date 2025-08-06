@@ -225,6 +225,56 @@ class SchemaSearcher:
             include_scores=include_scores
         )
     
+    def search_schema(
+        self,
+        query: str,
+        k_tables: int = 5,
+        k_columns: int = 10,
+        include_scores: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Search for relevant schema elements (tables and columns) based on query.
+        This method maintains compatibility with existing code.
+        
+        Args:
+            query: Search query string
+            k_tables: Maximum number of table results to return
+            k_columns: Maximum number of column results to return
+            include_scores: Whether to include similarity scores
+            
+        Returns:
+            Dictionary containing 'tables' and 'columns' results
+        """
+        try:
+            # Search for tables
+            table_results = self.search_tables(
+                query=query,
+                n_results=k_tables,
+                include_scores=include_scores
+            )
+            
+            # Search for columns
+            column_results = self.search_columns(
+                query=query,
+                n_results=k_columns,
+                include_scores=include_scores
+            )
+            
+            return {
+                'tables': table_results,
+                'columns': column_results,
+                'query': query
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error in search_schema: {e}")
+            return {
+                'tables': [],
+                'columns': [],
+                'query': query,
+                'error': str(e)
+            }
+    
     def get_related_schema(
         self,
         table_name: str,
